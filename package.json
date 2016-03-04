@@ -1,0 +1,11 @@
+{
+  "name": "holdable",
+  "version": "1.0.0",
+  "main": "./js/src/Holdable",
+  "dependencies": {
+    "event": "aleclarson/event#1.0.0",
+    "factory": "aleclarson/factory#1.0.0",
+    "gesture": "aleclarson/gesture#1.0.0",
+    "timer": "aleclarson/timer#1.0.0"
+  }
+}
