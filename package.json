@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "main": "./js/src/Holdable",
   "dependencies": {
+    "combine": "aleclarson/combine#1.0.0",
+    "emptyFunction": "aleclarson/emptyFunction#1.0.0",
     "event": "aleclarson/event#1.0.0",
     "factory": "aleclarson/factory#1.0.0",
     "gesture": "aleclarson/gesture#1.0.0",
+    "simulateNativeEvent": "aleclarson/simulateNativeEvent#1.0.0",
     "timer": "aleclarson/timer#1.0.0"
   }
 }

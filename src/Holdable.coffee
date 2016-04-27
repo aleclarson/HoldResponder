@@ -9,7 +9,6 @@ simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 combine = require "combine"
 Factory = require "factory"
-define = require "define"
 Timer = require "timer"
 Event = require "event"
 
@@ -64,7 +63,6 @@ module.exports = Factory "Holdable",
   init: ->
 
     @_shouldTerminate = =>
-      log.it "_shouldTerminate: { isHolding: #{@_isHolding} }"
       return not @_isHolding
 
   boundMethods: [
@@ -100,6 +98,19 @@ module.exports = Factory "Holdable",
     else
       @didHoldReject.emit @_gesture
 
+  _onHoldEnd: ->
+
+    if @_isHolding
+      @_isHolding = no
+      @didHoldEnd.emit @_gesture
+      return
+
+    @stopTimer()
+
+    if @_endListener
+      @_endListener.stop()
+      @_endListener = null
+
   _simulateTouchMove: (event) ->
 
     event.timestamp += 0.001
@@ -110,6 +121,7 @@ module.exports = Factory "Holdable",
     simulateNativeEvent event.target, "onTouchMove", event
     @_isCapturing = no
 
+  # Calls your callback with the current (or next) captured Responder.
   _onResponderCapture: (callback) ->
 
     if Responder.capturedResponder isnt null
@@ -123,18 +135,18 @@ module.exports = Factory "Holdable",
     setImmediate -> onCapture.stop()
     return
 
+  # Calls your callback when the given Responder's gesture has ended.
   _onResponderEnd: (responder, callback) ->
     @_endListener.stop() if @_endListener
     @_endListener = responder.didEnd.once (gesture) =>
       @_endListener = null
       callback gesture
 
-  _trackCapturedResponder: ->
-    @_onResponderCapture (responder) ->
+  # Calls your callback when the captured Responder's gesture has ended.
+  _onCapturedResponderEnd: (callback) ->
+    @_onResponderCapture (responder) =>
       return if responder is this
-      @_onResponderEnd responder, (gesture) ->
-        return if @_isCapturing
-        @_interrupt gesture.finished
+      @_onResponderEnd responder, callback
 
 #
 # Subclass overrides
@@ -150,7 +162,9 @@ module.exports = Factory "Holdable",
     @startTimer()
     return yes if Responder::__shouldCaptureOnStart.apply this, arguments
     @_captureEvent = combine {}, event.nativeEvent
-    @_trackCapturedResponder()
+    @_onCapturedResponderEnd (gesture) =>
+      return if @_isCapturing
+      @_interrupt gesture.finished
     return no
 
   __shouldCaptureOnMove: (event) ->
@@ -159,32 +173,16 @@ module.exports = Factory "Holdable",
     @_captureEvent = combine {}, event.nativeEvent
     return no
 
+  __onTouchEnd: (touchCount) ->
+    @_onHoldEnd() if touchCount is 0
+    Responder::__onTouchEnd.apply this, arguments
+
   # __onTouchMove: ->
   #
   #   distance = Math.sqrt (Math.pow @_gesture.dx, 2) + (Math.pow @_gesture.dy, 2)
-  #
-  #   log.moat 1
-  #   log.it @__id + ".onTouchMove()"
-  #   log.it "distance = " + distance
-  #   log.moat 1
   #
   #   if (not @_isHolding) and (distance >= @_preventDistance)
   #     @terminate()
   #     return
   #
   #   Responder::__onTouchMove.apply this, arguments
-
-  __onTouchEnd: ->
-
-    if @_isHolding
-      @_isHolding = no
-      @didHoldEnd.emit @_gesture
-
-    else
-      @stopTimer()
-
-      if @_endListener
-        @_endListener.stop()
-        @_endListener = null
-
-    Responder::__onTouchEnd.apply this, arguments
