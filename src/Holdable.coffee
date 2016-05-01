@@ -2,72 +2,74 @@
 # TODO: Support multi-touch holding.
 
 { assertType } = require "type-utils"
-
 { Responder } = require "gesture"
 
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 combine = require "combine"
-Factory = require "factory"
 Timer = require "timer"
 Event = require "event"
+Type = require "Type"
 
-module.exports = Factory "Holdable",
+type = Type "Holdable"
 
-  kind: Responder
+type.inherits Responder
 
-  optionTypes:
-    minHoldTime: Number
-    preventDistance: Number
-    canHold: Function
+type.createArguments (args) ->
+  assert not args[0].shouldCaptureOnMove,
+    reason: "'shouldCaptureOnMove' is not supported by Holdable!"
+  return args
 
-  optionDefaults:
-    preventDistance: Infinity
-    canHold: emptyFunction.thatReturnsTrue
+type.optionTypes =
+  minHoldTime: Number
+  preventDistance: Number
+  canHold: Function
 
-  customValues:
+type.optionDefaults =
+  preventDistance: Infinity
+  canHold: emptyFunction.thatReturnsTrue
 
-    isHolding: get: ->
-      @_isHolding
+type.defineProperties
 
-  initArguments: (options) ->
-    assert not options.shouldCaptureOnMove?, "'shouldCaptureOnMove' is not supported by Holdable!"
-    arguments
+  isHolding: get: ->
+    @_isHolding
 
-  initFrozenValues: (options) ->
+type.defineFrozenValues
 
-    didHoldReject: Event()
+  didHoldReject: -> Event()
 
-    didHoldStart: Event()
+  didHoldStart: -> Event()
 
-    didHoldEnd: Event()
+  didHoldEnd: -> Event()
 
-    _minHoldTime: options.minHoldTime
+  _minHoldTime: (options) -> options.minHoldTime
 
-    _preventDistance: options.preventDistance
+  _preventDistance: (options) -> options.preventDistance
 
-    _canHold: options.canHold
+  _canHold: (options) -> options.canHold
 
-  initReactiveValues: ->
+type.defineReactiveValues
 
-    _endListener: null
+  _endListener: null
 
-    _captureEvent: null
+  _captureEvent: null
 
-    _isCapturing: no
+  _isCapturing: no
 
-    _holdTimer: null
+  _holdTimer: null
 
-    _isHolding: no
+  _isHolding: no
 
-  init: ->
+type.initInstance ->
 
-    @_shouldTerminate = =>
-      return not @_isHolding
+  @_shouldTerminate = =>
+    return not @_isHolding
 
-  boundMethods: [
-    "_onHoldStart"
-  ]
+type.bindMethods [
+  "_onHoldStart"
+]
+
+type.defineMethods
 
   startTimer: ->
     return if @_holdTimer
@@ -92,13 +94,17 @@ module.exports = Factory "Holdable",
       @_simulateTouchMove event
 
     if this is Responder.capturedResponder
+      log.it @__id + ".didHoldStart()"
       @_isHolding = yes
       @didHoldStart.emit @_gesture
 
     else
+      log.it @__id + ".didHoldReject()"
       @didHoldReject.emit @_gesture
 
   _onHoldEnd: ->
+
+    log.it @__id + "._onHoldEnd()"
 
     if @_isHolding
       @_isHolding = no
@@ -148,19 +154,17 @@ module.exports = Factory "Holdable",
       return if responder is this
       @_onResponderEnd responder, callback
 
-#
-# Subclass overrides
-#
+type.overrideMethods
 
   __shouldRespondOnStart: ->
-    return no unless Responder::__shouldRespondOnStart.apply this, arguments
+    return no unless @__super arguments
     @startTimer()
     return yes
 
   __shouldCaptureOnStart: (event) ->
     return no unless @_canHold @_gesture
     @startTimer()
-    return yes if Responder::__shouldCaptureOnStart.apply this, arguments
+    return yes if @__super arguments
     @_captureEvent = combine {}, event.nativeEvent
     @_onCapturedResponderEnd (gesture) =>
       return if @_isCapturing
@@ -169,20 +173,27 @@ module.exports = Factory "Holdable",
 
   __shouldCaptureOnMove: (event) ->
     return yes if @_isCapturing
-    return yes if Responder::__shouldCaptureOnMove.apply this, arguments
+    return yes if @__super arguments
     @_captureEvent = combine {}, event.nativeEvent
     return no
 
   __onTouchEnd: (touchCount) ->
     @_onHoldEnd() if touchCount is 0
-    Responder::__onTouchEnd.apply this, arguments
+    @__super arguments
 
   # __onTouchMove: ->
   #
   #   distance = Math.sqrt (Math.pow @_gesture.dx, 2) + (Math.pow @_gesture.dy, 2)
+  #
+  #   log.moat 1
+  #   log.it @__id + ".onTouchMove()"
+  #   log.it "distance = " + distance
+  #   log.moat 1
   #
   #   if (not @_isHolding) and (distance >= @_preventDistance)
   #     @terminate()
   #     return
   #
   #   Responder::__onTouchMove.apply this, arguments
+
+module.exports = type.build()
