@@ -1,11 +1,11 @@
 
 # TODO: Support multi-touch holding.
 
-{ assertType } = require "type-utils"
 { Responder } = require "gesture"
 
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
+assertType = require "assertType"
 combine = require "combine"
 Timer = require "timer"
 Event = require "event"

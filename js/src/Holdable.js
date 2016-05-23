@@ -1,6 +1,4 @@
-var Event, Factory, Responder, Timer, assertType, combine, emptyFunction, simulateNativeEvent;
-
-assertType = require("type-utils").assertType;
+var Event, Responder, Timer, Type, assertType, combine, emptyFunction, simulateNativeEvent, type;
 
 Responder = require("gesture").Responder;
 
@@ -8,63 +6,86 @@ simulateNativeEvent = require("simulateNativeEvent");
 
 emptyFunction = require("emptyFunction");
 
-combine = require("combine");
+assertType = require("assertType");
 
-Factory = require("factory");
+combine = require("combine");
 
 Timer = require("timer");
 
 Event = require("event");
 
-module.exports = Factory("Holdable", {
-  kind: Responder,
-  optionTypes: {
-    minHoldTime: Number,
-    preventDistance: Number,
-    canHold: Function
-  },
-  optionDefaults: {
-    preventDistance: Infinity,
-    canHold: emptyFunction.thatReturnsTrue
-  },
-  customValues: {
-    isHolding: {
-      get: function() {
-        return this._isHolding;
-      }
+Type = require("Type");
+
+type = Type("Holdable");
+
+type.inherits(Responder);
+
+type.createArguments(function(args) {
+  assert(!args[0].shouldCaptureOnMove, {
+    reason: "'shouldCaptureOnMove' is not supported by Holdable!"
+  });
+  return args;
+});
+
+type.optionTypes = {
+  minHoldTime: Number,
+  preventDistance: Number,
+  canHold: Function
+};
+
+type.optionDefaults = {
+  preventDistance: 2e308,
+  canHold: emptyFunction.thatReturnsTrue
+};
+
+type.defineProperties({
+  isHolding: {
+    get: function() {
+      return this._isHolding;
     }
+  }
+});
+
+type.defineFrozenValues({
+  didHoldReject: function() {
+    return Event();
   },
-  initArguments: function(options) {
-    assert(options.shouldCaptureOnMove == null, "'shouldCaptureOnMove' is not supported by Holdable!");
-    return arguments;
+  didHoldStart: function() {
+    return Event();
   },
-  initFrozenValues: function(options) {
-    return {
-      didHoldReject: Event(),
-      didHoldStart: Event(),
-      didHoldEnd: Event(),
-      _minHoldTime: options.minHoldTime,
-      _preventDistance: options.preventDistance,
-      _canHold: options.canHold
+  didHoldEnd: function() {
+    return Event();
+  },
+  _minHoldTime: function(options) {
+    return options.minHoldTime;
+  },
+  _preventDistance: function(options) {
+    return options.preventDistance;
+  },
+  _canHold: function(options) {
+    return options.canHold;
+  }
+});
+
+type.defineReactiveValues({
+  _endListener: null,
+  _captureEvent: null,
+  _isCapturing: false,
+  _holdTimer: null,
+  _isHolding: false
+});
+
+type.initInstance(function() {
+  return this._shouldTerminate = (function(_this) {
+    return function() {
+      return !_this._isHolding;
     };
-  },
-  initReactiveValues: function() {
-    return {
-      _endListener: null,
-      _captureEvent: null,
-      _isCapturing: false,
-      _holdTimer: null,
-      _isHolding: false
-    };
-  },
-  init: function() {
-    return this._shouldTerminate = (function(_this) {
-      return function() {
-        return !_this._isHolding;
-      };
-    })(this);
-  },
-  boundMethods: ["_onHoldStart"],
+  })(this);
+});
+
+type.bindMethods(["_onHoldStart"]);
+
+type.defineMethods({
   startTimer: function() {
     if (this._holdTimer) {
       return;
@@ -88,13 +109,16 @@ module.exports = Factory("Holdable", {
       this._simulateTouchMove(event);
     }
     if (this === Responder.capturedResponder) {
+      log.it(this.__id + ".didHoldStart()");
       this._isHolding = true;
       return this.didHoldStart.emit(this._gesture);
     } else {
+      log.it(this.__id + ".didHoldReject()");
       return this.didHoldReject.emit(this._gesture);
     }
   },
   _onHoldEnd: function() {
+    log.it(this.__id + "._onHoldEnd()");
     if (this._isHolding) {
       this._isHolding = false;
       this.didHoldEnd.emit(this._gesture);
@@ -149,9 +173,12 @@ module.exports = Factory("Holdable", {
         return _this._onResponderEnd(responder, callback);
       };
     })(this));
-  },
+  }
+});
+
+type.overrideMethods({
   __shouldRespondOnStart: function() {
-    if (!Responder.prototype.__shouldRespondOnStart.apply(this, arguments)) {
+    if (!this.__super(arguments)) {
       return false;
     }
     this.startTimer();
@@ -162,7 +189,7 @@ module.exports = Factory("Holdable", {
       return false;
     }
     this.startTimer();
-    if (Responder.prototype.__shouldCaptureOnStart.apply(this, arguments)) {
+    if (this.__super(arguments)) {
       return true;
     }
     this._captureEvent = combine({}, event.nativeEvent);
@@ -180,7 +207,7 @@ module.exports = Factory("Holdable", {
     if (this._isCapturing) {
       return true;
     }
-    if (Responder.prototype.__shouldCaptureOnMove.apply(this, arguments)) {
+    if (this.__super(arguments)) {
       return true;
     }
     this._captureEvent = combine({}, event.nativeEvent);
@@ -190,8 +217,10 @@ module.exports = Factory("Holdable", {
     if (touchCount === 0) {
       this._onHoldEnd();
     }
-    return Responder.prototype.__onTouchEnd.apply(this, arguments);
+    return this.__super(arguments);
   }
 });
+
+module.exports = type.build();
 
 //# sourceMappingURL=../../map/src/Holdable.map
