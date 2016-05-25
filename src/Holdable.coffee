@@ -154,8 +154,6 @@ type.defineMethods
       return if responder is this
       @_onResponderEnd responder, callback
 
-type.overrideMethods
-
   __shouldRespondOnStart: ->
     return no unless @__super arguments
     @startTimer()

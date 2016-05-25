@@ -173,10 +173,7 @@ type.defineMethods({
         return _this._onResponderEnd(responder, callback);
       };
     })(this));
-  }
-});
-
-type.overrideMethods({
+  },
   __shouldRespondOnStart: function() {
     if (!this.__super(arguments)) {
       return false;
