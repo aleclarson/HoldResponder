@@ -1,4 +1,4 @@
-var Event, Responder, Timer, Type, assertType, combine, emptyFunction, simulateNativeEvent, type;
+var Event, Responder, Timer, Type, assertType, combine, emptyFunction, getArgProp, simulateNativeEvent, type;
 
 Responder = require("gesture").Responder;
 
@@ -7,6 +7,8 @@ simulateNativeEvent = require("simulateNativeEvent");
 emptyFunction = require("emptyFunction");
 
 assertType = require("assertType");
+
+getArgProp = require("getArgProp");
 
 combine = require("combine");
 
@@ -56,15 +58,9 @@ type.defineFrozenValues({
   didHoldEnd: function() {
     return Event();
   },
-  _minHoldTime: function(options) {
-    return options.minHoldTime;
-  },
-  _preventDistance: function(options) {
-    return options.preventDistance;
-  },
-  _canHold: function(options) {
-    return options.canHold;
-  }
+  _minHoldTime: getArgProp("minHoldTime"),
+  _preventDistance: getArgProp("preventDistance"),
+  _canHold: getArgProp("canHold")
 });
 
 type.defineReactiveValues({
@@ -105,10 +101,10 @@ type.defineMethods({
     this._holdTimer = null;
     event = this._captureEvent;
     this._captureEvent = null;
-    if (this !== Responder.capturedResponder) {
+    if (this !== Responder.grantedResponder) {
       this._simulateTouchMove(event);
     }
-    if (this === Responder.capturedResponder) {
+    if (this === Responder.grantedResponder) {
       log.it(this.__id + ".didHoldStart()");
       this._isHolding = true;
       return this.didHoldStart.emit(this._gesture);
@@ -142,13 +138,13 @@ type.defineMethods({
     simulateNativeEvent(event.target, "onTouchMove", event);
     return this._isCapturing = false;
   },
-  _onResponderCapture: function(callback) {
+  _onResponderGrant: function(callback) {
     var onCapture;
-    if (Responder.capturedResponder !== null) {
-      callback(Responder.capturedResponder);
+    if (Responder.grantedResponder !== null) {
+      callback(Responder.grantedResponder);
       return;
     }
-    onCapture = Responder.didResponderCapture.once(callback);
+    onCapture = Responder.didResponderGrant.once(callback);
     setImmediate(function() {
       return onCapture.stop();
     });
@@ -164,8 +160,8 @@ type.defineMethods({
       };
     })(this));
   },
-  _onCapturedResponderEnd: function(callback) {
-    return this._onResponderCapture((function(_this) {
+  _onGrantedResponderEnd: function(callback) {
+    return this._onResponderGrant((function(_this) {
       return function(responder) {
         if (responder === _this) {
           return;
@@ -173,7 +169,10 @@ type.defineMethods({
         return _this._onResponderEnd(responder, callback);
       };
     })(this));
-  },
+  }
+});
+
+type.overrideMethods({
   __shouldRespondOnStart: function() {
     if (!this.__super(arguments)) {
       return false;
@@ -190,7 +189,7 @@ type.defineMethods({
       return true;
     }
     this._captureEvent = combine({}, event.nativeEvent);
-    this._onCapturedResponderEnd((function(_this) {
+    this._onGrantedResponderEnd((function(_this) {
       return function(gesture) {
         if (_this._isCapturing) {
           return;
@@ -209,6 +208,15 @@ type.defineMethods({
     }
     this._captureEvent = combine({}, event.nativeEvent);
     return false;
+  },
+  __onTouchMove: function() {
+    var distance;
+    distance = Math.sqrt((Math.pow(this._gesture.dx, 2)) + (Math.pow(this._gesture.dy, 2)));
+    if ((!this._isHolding) && (distance >= this._preventDistance)) {
+      this.terminate();
+      return;
+    }
+    return this.__super(arguments);
   },
   __onTouchEnd: function(touchCount) {
     if (touchCount === 0) {

@@ -9,6 +9,7 @@
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",
     "event": "aleclarson/event#2.0.0",
     "gesture": "aleclarson/gesture#2.0.0",
+    "getArgProp": "aleclarson/getArgProp#1.0.0",
     "simulateNativeEvent": "aleclarson/simulateNativeEvent#1.0.0",
     "timer": "aleclarson/timer#2.0.0"
   },

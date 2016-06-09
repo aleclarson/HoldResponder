@@ -6,6 +6,7 @@
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 assertType = require "assertType"
+getArgProp = require "getArgProp"
 combine = require "combine"
 Timer = require "timer"
 Event = require "event"
@@ -42,11 +43,11 @@ type.defineFrozenValues
 
   didHoldEnd: -> Event()
 
-  _minHoldTime: (options) -> options.minHoldTime
+  _minHoldTime: getArgProp "minHoldTime"
 
-  _preventDistance: (options) -> options.preventDistance
+  _preventDistance: getArgProp "preventDistance"
 
-  _canHold: (options) -> options.canHold
+  _canHold: getArgProp "canHold"
 
 type.defineReactiveValues
 
@@ -90,10 +91,10 @@ type.defineMethods
     event = @_captureEvent
     @_captureEvent = null
 
-    if this isnt Responder.capturedResponder
+    if this isnt Responder.grantedResponder
       @_simulateTouchMove event
 
-    if this is Responder.capturedResponder
+    if this is Responder.grantedResponder
       log.it @__id + ".didHoldStart()"
       @_isHolding = yes
       @didHoldStart.emit @_gesture
@@ -128,13 +129,13 @@ type.defineMethods
     @_isCapturing = no
 
   # Calls your callback with the current (or next) captured Responder.
-  _onResponderCapture: (callback) ->
+  _onResponderGrant: (callback) ->
 
-    if Responder.capturedResponder isnt null
-      callback Responder.capturedResponder
+    if Responder.grantedResponder isnt null
+      callback Responder.grantedResponder
       return
 
-    onCapture = Responder.didResponderCapture
+    onCapture = Responder.didResponderGrant
       .once callback
 
     # If no responder captures, stop listening!
@@ -148,11 +149,13 @@ type.defineMethods
       @_endListener = null
       callback gesture
 
-  # Calls your callback when the captured Responder's gesture has ended.
-  _onCapturedResponderEnd: (callback) ->
-    @_onResponderCapture (responder) =>
+  # Calls your callback when the tracked Responder's gesture has ended.
+  _onGrantedResponderEnd: (callback) ->
+    @_onResponderGrant (responder) =>
       return if responder is this
       @_onResponderEnd responder, callback
+
+type.overrideMethods
 
   __shouldRespondOnStart: ->
     return no unless @__super arguments
@@ -164,7 +167,7 @@ type.defineMethods
     @startTimer()
     return yes if @__super arguments
     @_captureEvent = combine {}, event.nativeEvent
-    @_onCapturedResponderEnd (gesture) =>
+    @_onGrantedResponderEnd (gesture) =>
       return if @_isCapturing
       @_interrupt gesture.finished
     return no
@@ -175,23 +178,17 @@ type.defineMethods
     @_captureEvent = combine {}, event.nativeEvent
     return no
 
+  __onTouchMove: ->
+
+    distance = Math.sqrt (Math.pow @_gesture.dx, 2) + (Math.pow @_gesture.dy, 2)
+    if (not @_isHolding) and (distance >= @_preventDistance)
+      @terminate()
+      return
+
+    @__super arguments
+
   __onTouchEnd: (touchCount) ->
     @_onHoldEnd() if touchCount is 0
     @__super arguments
-
-  # __onTouchMove: ->
-  #
-  #   distance = Math.sqrt (Math.pow @_gesture.dx, 2) + (Math.pow @_gesture.dy, 2)
-  #
-  #   log.moat 1
-  #   log.it @__id + ".onTouchMove()"
-  #   log.it "distance = " + distance
-  #   log.moat 1
-  #
-  #   if (not @_isHolding) and (distance >= @_preventDistance)
-  #     @terminate()
-  #     return
-  #
-  #   Responder::__onTouchMove.apply this, arguments
 
 module.exports = type.build()
