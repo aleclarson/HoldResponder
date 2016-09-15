@@ -2,6 +2,13 @@
   "name": "holdable",
   "version": "1.0.0",
   "main": "./js/src/Holdable",
+  "plugins": [
+    "lotus-coffee"
+  ],
+  "scripts": {
+    "build": "coffee -cb -o js src",
+    "postinstall": "postinstall-build js 'npm run build'"
+  },
   "dependencies": {
     "Type": "aleclarson/Type#1.0.0",
     "assertType": "aleclarson/assertType#1.0.0",
@@ -10,12 +17,11 @@
     "event": "aleclarson/event#2.0.0",
     "gesture": "aleclarson/gesture#2.0.0",
     "getArgProp": "aleclarson/getArgProp#1.0.0",
+    "postinstall-build": "0.2.x",
     "simulateNativeEvent": "aleclarson/simulateNativeEvent#1.0.0",
     "timer": "aleclarson/timer#2.0.0"
   },
-  "lotus": {
-    "plugins": [
-      "lotus-coffee"
-    ]
+  "devDependencies": {
+    "coffee-script": "1.9.x"
   }
 }
