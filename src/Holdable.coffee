@@ -1,53 +1,45 @@
 
 # TODO: Support multi-touch holding.
 
-{ Responder } = require "gesture"
-
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
+cloneObject = require "cloneObject"
 assertType = require "assertType"
-getArgProp = require "getArgProp"
-combine = require "combine"
+fromArgs = require "fromArgs"
+Gesture = require "gesture"
 Timer = require "timer"
-Event = require "event"
 Type = require "Type"
 
 type = Type "Holdable"
 
-type.inherits Responder
+type.inherits Gesture.Responder
 
-type.createArguments (args) ->
-  assert not args[0].shouldCaptureOnMove,
-    reason: "'shouldCaptureOnMove' is not supported by Holdable!"
-  return args
+type.initArgs (args) ->
+  if args[0].shouldCaptureOnMove
+    throw Error "'options.shouldCaptureOnMove' is not allowed by Holdable!"
+  return
 
-type.optionTypes =
-  minHoldTime: Number
-  preventDistance: Number
-  canHold: Function
+type.defineOptions
 
-type.optionDefaults =
-  preventDistance: Infinity
-  canHold: emptyFunction.thatReturnsTrue
+  minHoldTime:
+    type: Number
+    required: yes
 
-type.defineProperties
+  preventDistance:
+    type: Number
+    default: Infinity
 
-  isHolding: get: ->
-    @_isHolding
+  canHold:
+    type: Function
+    default: emptyFunction.thatReturnsTrue
 
 type.defineFrozenValues
 
-  didHoldReject: -> Event()
+  _minHoldTime: fromArgs "minHoldTime"
 
-  didHoldStart: -> Event()
+  _preventDistance: fromArgs "preventDistance"
 
-  didHoldEnd: -> Event()
-
-  _minHoldTime: getArgProp "minHoldTime"
-
-  _preventDistance: getArgProp "preventDistance"
-
-  _canHold: getArgProp "canHold"
+  _canHold: fromArgs "canHold"
 
 type.defineReactiveValues
 
@@ -66,9 +58,20 @@ type.initInstance ->
   @_shouldTerminate = =>
     return not @_isHolding
 
-type.bindMethods [
-  "_onHoldStart"
-]
+type.defineEvents
+
+  didHoldReject:
+    gesture: Gesture.Kind
+
+  didHoldStart:
+    gesture: Gesture.Kind
+
+  didHoldEnd:
+    gesture: Gesture.Kind
+
+type.defineGetters
+
+  isHolding: -> @_isHolding
 
 type.defineMethods
 
@@ -84,32 +87,13 @@ type.defineMethods
     @_captureEvent = null
     return
 
-  _onHoldStart: ->
-
-    @_holdTimer = null
-
-    event = @_captureEvent
-    @_captureEvent = null
-
-    if this isnt Responder.grantedResponder
-      @_simulateTouchMove event
-
-    if this is Responder.grantedResponder
-      log.it @__id + ".didHoldStart()"
-      @_isHolding = yes
-      @didHoldStart.emit @_gesture
-
-    else
-      log.it @__id + ".didHoldReject()"
-      @didHoldReject.emit @_gesture
-
   _onHoldEnd: ->
 
     log.it @__id + "._onHoldEnd()"
 
     if @_isHolding
       @_isHolding = no
-      @didHoldEnd.emit @_gesture
+      @__events.didHoldEnd @_gesture
       return
 
     @stopTimer()
@@ -135,8 +119,7 @@ type.defineMethods
       callback Responder.grantedResponder
       return
 
-    onCapture = Responder.didResponderGrant
-      .once callback
+    onCapture = Responder.didResponderGrant 1, callback
 
     # If no responder captures, stop listening!
     setImmediate -> onCapture.stop()
@@ -145,7 +128,7 @@ type.defineMethods
   # Calls your callback when the given Responder's gesture has ended.
   _onResponderEnd: (responder, callback) ->
     @_endListener.stop() if @_endListener
-    @_endListener = responder.didEnd.once (gesture) =>
+    @_endListener = responder.didEnd 1, (gesture) =>
       @_endListener = null
       callback gesture
 
@@ -154,6 +137,27 @@ type.defineMethods
     @_onResponderGrant (responder) =>
       return if responder is this
       @_onResponderEnd responder, callback
+
+type.defineBoundMethods
+
+  _onHoldStart: ->
+
+    @_holdTimer = null
+
+    event = @_captureEvent
+    @_captureEvent = null
+
+    if this isnt Responder.grantedResponder
+      @_simulateTouchMove event
+
+    if this is Responder.grantedResponder
+      log.it @__id + ".didHoldStart()"
+      @_isHolding = yes
+      @_events.didHoldStart @_gesture
+
+    else
+      log.it @__id + ".didHoldReject()"
+      @__events.didHoldReject @_gesture
 
 type.overrideMethods
 
@@ -166,7 +170,7 @@ type.overrideMethods
     return no unless @_canHold @_gesture
     @startTimer()
     return yes if @__super arguments
-    @_captureEvent = combine {}, event.nativeEvent
+    @_captureEvent = cloneObject event.nativeEvent
     @_onGrantedResponderEnd (gesture) =>
       return if @_isCapturing
       @_interrupt gesture.finished
@@ -175,7 +179,7 @@ type.overrideMethods
   __shouldCaptureOnMove: (event) ->
     return yes if @_isCapturing
     return yes if @__super arguments
-    @_captureEvent = combine {}, event.nativeEvent
+    @_captureEvent = cloneObject event.nativeEvent
     return no
 
   __onTouchMove: ->

@@ -10,13 +10,12 @@
     "postinstall": "postinstall-build js 'npm run build'"
   },
   "dependencies": {
-    "Type": "aleclarson/Type#1.0.0",
-    "assertType": "aleclarson/assertType#1.0.0",
-    "combine": "aleclarson/combine#1.0.0",
+    "Type": "aleclarson/Type#1.1.0",
+    "assertType": "aleclarson/assertType#2.0.0",
+    "cloneObject": "aleclarson/cloneObject#1.0.0",
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",
-    "event": "aleclarson/event#2.0.0",
+    "fromArgs": "aleclarson/fromArgs#1.0.0",
     "gesture": "aleclarson/gesture#2.0.0",
-    "getArgProp": "aleclarson/getArgProp#1.0.0",
     "postinstall-build": "0.2.x",
     "simulateNativeEvent": "aleclarson/simulateNativeEvent#1.0.0",
     "timer": "aleclarson/timer#2.0.0"
