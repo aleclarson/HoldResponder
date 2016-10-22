@@ -1,45 +1,34 @@
 
 # TODO: Support multi-touch holding.
 
+Gesture = {Responder} = require "gesture"
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 cloneObject = require "cloneObject"
 assertType = require "assertType"
-fromArgs = require "fromArgs"
-Gesture = require "gesture"
 Timer = require "timer"
 Type = require "Type"
 
 type = Type "Holdable"
 
-type.inherits Gesture.Responder
-
-type.initArgs (args) ->
-  if args[0].shouldCaptureOnMove
-    throw Error "'options.shouldCaptureOnMove' is not allowed by Holdable!"
-  return
+type.inherits Responder
 
 type.defineOptions
+  minHoldTime: Number.isRequired
+  preventDistance: Number.withDefault Infinity
+  canHold: Function.withDefault emptyFunction.thatReturnsTrue
 
-  minHoldTime:
-    type: Number
-    required: yes
+type.initArgs ([ options ]) ->
+  if options.shouldCaptureOnMove
+    throw Error "'options.shouldCaptureOnMove' is not allowed by Holdable!"
 
-  preventDistance:
-    type: Number
-    default: Infinity
+type.defineFrozenValues (options) ->
 
-  canHold:
-    type: Function
-    default: emptyFunction.thatReturnsTrue
+  _minHoldTime: options.minHoldTime
 
-type.defineFrozenValues
+  _preventDistance: options.preventDistance
 
-  _minHoldTime: fromArgs "minHoldTime"
-
-  _preventDistance: fromArgs "preventDistance"
-
-  _canHold: fromArgs "canHold"
+  _canHold: options.canHold
 
 type.defineReactiveValues
 
@@ -55,19 +44,15 @@ type.defineReactiveValues
 
 type.initInstance ->
 
-  @_shouldTerminate = =>
-    return not @_isHolding
+  @_shouldTerminate = => not @_isHolding
 
 type.defineEvents
 
-  didHoldReject:
-    gesture: Gesture.Kind
+  didHoldReject: {gesture: Gesture.Kind}
 
-  didHoldStart:
-    gesture: Gesture.Kind
+  didHoldStart: {gesture: Gesture.Kind}
 
-  didHoldEnd:
-    gesture: Gesture.Kind
+  didHoldEnd: {gesture: Gesture.Kind}
 
 type.defineGetters
 
@@ -88,8 +73,6 @@ type.defineMethods
     return
 
   _onHoldEnd: ->
-
-    log.it @__id + "._onHoldEnd()"
 
     if @_isHolding
       @_isHolding = no
@@ -115,11 +98,11 @@ type.defineMethods
   # Calls your callback with the current (or next) captured Responder.
   _onResponderGrant: (callback) ->
 
-    if Responder.grantedResponder isnt null
-      callback Responder.grantedResponder
+    if Responder.current isnt null
+      callback Responder.current
       return
 
-    onCapture = Responder.didResponderGrant 1, callback
+    onCapture = Responder.didGrant 1, callback
 
     # If no responder captures, stop listening!
     setImmediate -> onCapture.stop()
@@ -147,16 +130,14 @@ type.defineBoundMethods
     event = @_captureEvent
     @_captureEvent = null
 
-    if this isnt Responder.grantedResponder
+    if this isnt Responder.current
       @_simulateTouchMove event
 
-    if this is Responder.grantedResponder
-      log.it @__id + ".didHoldStart()"
+    if this is Responder.current
       @_isHolding = yes
-      @_events.didHoldStart @_gesture
+      @__events.didHoldStart @_gesture
 
     else
-      log.it @__id + ".didHoldReject()"
       @__events.didHoldReject @_gesture
 
 type.overrideMethods
@@ -191,8 +172,9 @@ type.overrideMethods
 
     @__super arguments
 
-  __onTouchEnd: (touchCount) ->
-    @_onHoldEnd() if touchCount is 0
+  __onTouchEnd: (event) ->
+    {touches} = event.nativeEvent
+    @_onHoldEnd() if touches.length is 0
     @__super arguments
 
 module.exports = type.build()
