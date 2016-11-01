@@ -5,7 +5,7 @@ Gesture = {Responder} = require "gesture"
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 cloneObject = require "cloneObject"
-assertType = require "assertType"
+Event = require "Event"
 Timer = require "timer"
 Type = require "Type"
 
@@ -46,7 +46,7 @@ type.initInstance ->
 
   @_shouldTerminate = => not @_isHolding
 
-type.defineEvents
+type.addMixin Event.Mixin,
 
   didHoldReject: {gesture: Gesture.Kind}
 
