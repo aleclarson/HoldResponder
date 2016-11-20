@@ -10,12 +10,12 @@
     "postinstall": "npm run build"
   },
   "dependencies": {
-    "Event": "aleclarson/Event#2.0.1",
-    "Type": "aleclarson/Type#1.1.0",
-    "cloneObject": "aleclarson/cloneObject#1.0.0",
+    "Event": "aleclarson/Event#2.1.0",
+    "Type": "aleclarson/Type#2.1.0",
+    "cloneObject": "aleclarson/cloneObject#1.0.1",
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",
-    "gesture": "aleclarson/gesture#2.0.1",
-    "simulateNativeEvent": "aleclarson/simulateNativeEvent#1.0.0",
-    "timer": "aleclarson/timer#2.0.0"
+    "gesture": "aleclarson/gesture#2.1.0",
+    "simulateNativeEvent": "aleclarson/simulateNativeEvent#1.1.0",
+    "timer": "aleclarson/timer#2.0.1"
   }
 }
