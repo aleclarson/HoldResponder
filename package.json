@@ -1,7 +1,7 @@
 {
   "name": "holdable",
-  "version": "1.0.0",
-  "main": "./js/src/Holdable",
+  "version": "1.1.0",
+  "main": "js/Holdable",
   "plugins": [
     "lotus-coffee"
   ],
