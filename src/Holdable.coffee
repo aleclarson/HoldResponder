@@ -1,7 +1,8 @@
 
 # TODO: Support multi-touch holding.
 
-Gesture = {Responder} = require "gesture"
+{Responder} = require "gesture"
+
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 cloneObject = require "cloneObject"
@@ -23,6 +24,12 @@ type.initArgs ([ options ]) ->
     throw Error "'options.shouldCaptureOnMove' is not allowed by Holdable!"
 
 type.defineFrozenValues (options) ->
+
+  didHoldReject: Event {async: no}
+
+  didHoldStart: Event {async: no}
+
+  didHoldEnd: Event {async: no}
 
   _minHoldTime: options.minHoldTime
 
@@ -46,14 +53,6 @@ type.initInstance ->
 
   @_shouldTerminate = => not @_isHolding
 
-type.addMixin Event.Mixin,
-
-  didHoldReject: {gesture: Gesture.Kind}
-
-  didHoldStart: {gesture: Gesture.Kind}
-
-  didHoldEnd: {gesture: Gesture.Kind}
-
 type.defineGetters
 
   isHolding: -> @_isHolding
@@ -76,7 +75,7 @@ type.defineMethods
 
     if @_isHolding
       @_isHolding = no
-      @__events.didHoldEnd @_gesture
+      @didHoldEnd.emit @_gesture
       return
 
     @stopTimer()
@@ -135,10 +134,10 @@ type.defineBoundMethods
 
     if this is Responder.current
       @_isHolding = yes
-      @__events.didHoldStart @_gesture
+      @didHoldStart.emit @_gesture
 
     else
-      @__events.didHoldReject @_gesture
+      @didHoldReject.emit @_gesture
 
 type.overrideMethods
 
