@@ -10,7 +10,7 @@ Event = require "Event"
 Timer = require "timer"
 Type = require "Type"
 
-type = Type "Holdable"
+type = Type "HoldResponder"
 
 type.inherits Responder
 
@@ -25,11 +25,11 @@ type.initArgs ([ options ]) ->
 
 type.defineFrozenValues (options) ->
 
-  didHoldReject: Event {async: no}
+  didHoldReject: Event.sync()
 
-  didHoldStart: Event {async: no}
+  didHoldStart: Event.sync()
 
-  didHoldEnd: Event {async: no}
+  didHoldEnd: Event.sync()
 
   _minHoldTime: options.minHoldTime
 

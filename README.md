@@ -1,11 +1,9 @@
 
-# holdable v1.1.0 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
+# HoldResponder v1.2.0 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
 
-Built for [React Native](https://github.com/facebook/react-native)!
+A [`Gesture.Responder`](https://github.com/aleclarson/gesture#gestureresponder) for detecting "long press" gestures on a `View`.
 
-`Holdable` subclasses [`Gesture.Responder`](https://github.com/aleclarson/gesture#gestureresponder) for detecting "long press" gestures on a [`View`](https://github.com/aleclarson/component).
-
-### Holdable.optionTypes
+### Options
 
 ```coffee
 # The smallest amount of milliseconds before a hold is recognized.
@@ -20,9 +18,7 @@ preventDistance: Number
 canHold: Function
 ```
 
-Included: [Gesture.Responder.optionTypes](https://github.com/aleclarson/gesture)
-
-### Holdable.properties
+### Properties
 
 ```coffee
 # Equals true if a recognized hold has not yet ended. (read-only)
@@ -41,7 +37,7 @@ hold.didHoldReject (gesture) ->
 hold.touchHandlers
 ```
 
-### Holdable.prototype
+### Prototype
 
 ```coffee
 # Manually start the timer that recognizes a hold.
