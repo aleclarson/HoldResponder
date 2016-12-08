@@ -1,7 +1,7 @@
 {
-  "name": "holdable",
+  "name": "HoldResponder",
   "version": "1.1.0",
-  "main": "js/Holdable",
+  "main": "js/HoldResponder",
   "plugins": [
     "lotus-coffee"
   ],

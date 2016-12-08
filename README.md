@@ -1,5 +1,5 @@
 
-# holdable v1.1.0 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
+# HoldResponder v1.1.0 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
 
 Built for [React Native](https://github.com/facebook/react-native)!
 

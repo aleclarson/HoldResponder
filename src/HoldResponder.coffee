@@ -10,7 +10,7 @@ Event = require "Event"
 Timer = require "timer"
 Type = require "Type"
 
-type = Type "Holdable"
+type = Type "HoldResponder"
 
 type.inherits Responder
 
