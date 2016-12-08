@@ -25,11 +25,11 @@ type.initArgs ([ options ]) ->
 
 type.defineFrozenValues (options) ->
 
-  didHoldReject: Event {async: no}
+  didHoldReject: Event.sync()
 
-  didHoldStart: Event {async: no}
+  didHoldStart: Event.sync()
 
-  didHoldEnd: Event {async: no}
+  didHoldEnd: Event.sync()
 
   _minHoldTime: options.minHoldTime
 
