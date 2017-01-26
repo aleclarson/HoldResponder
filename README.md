@@ -1,5 +1,5 @@
 
-# HoldResponder v1.2.0 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
+# HoldResponder v1.2.1 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
 
 A [`Gesture.Responder`](https://github.com/aleclarson/gesture#gestureresponder) for detecting "long press" gestures on a `View`.
 
