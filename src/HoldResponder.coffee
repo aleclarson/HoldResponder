@@ -14,14 +14,24 @@ type = Type "HoldResponder"
 
 type.inherits Responder
 
-type.defineOptions
-  minHoldTime: Number.isRequired
-  preventDistance: Number.withDefault Infinity
-  canHold: Function.withDefault emptyFunction.thatReturnsTrue
+type.defineArgs ->
 
-type.initArgs ([ options ]) ->
-  if options.shouldCaptureOnMove
-    throw Error "'options.shouldCaptureOnMove' is not allowed by Holdable!"
+  required:
+    minHoldTime: yes
+
+  types:
+    minHoldTime: Number
+    preventDistance: Number
+    canHold: Function
+
+  defaults:
+    preventDistance: Infinity
+    canHold: emptyFunction.thatReturnsTrue
+
+type.createArgs (args) ->
+  if args[0].shouldCaptureOnMove
+    throw Error "'options.shouldCaptureOnMove' is not supported by HoldResponder!"
+  return args
 
 type.defineFrozenValues (options) ->
 
