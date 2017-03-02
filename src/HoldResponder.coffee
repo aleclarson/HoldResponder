@@ -6,8 +6,8 @@
 simulateNativeEvent = require "simulateNativeEvent"
 emptyFunction = require "emptyFunction"
 cloneObject = require "cloneObject"
-Event = require "Event"
 Timer = require "timer"
+Event = require "eve"
 Type = require "Type"
 
 type = Type "HoldResponder"
