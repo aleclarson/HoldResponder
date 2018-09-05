@@ -1,4 +1,5 @@
 
+# TODO: Use `ResponderCache.findAncestor` instead of `Responder.current` (which no longer exists)
 # TODO: Support multi-touch holding.
 
 {Responder} = require "gesture"
@@ -59,13 +60,14 @@ type.defineReactiveValues
 
   _isHolding: no
 
-type.initInstance ->
-
-  @_shouldTerminate = => not @_isHolding
-
 type.defineGetters
 
   isHolding: -> @_isHolding
+
+  _isPrevented: ->
+    gesture = @_gesture
+    distance = Math.sqrt Math.pow(gesture.dx, 2) + Math.pow(gesture.dy, 2)
+    return distance >= @_preventDistance
 
 type.defineMethods
 
@@ -93,6 +95,7 @@ type.defineMethods
     if @_endListener
       @_endListener.stop()
       @_endListener = null
+    return
 
   _simulateTouchMove: (event) ->
 
@@ -120,15 +123,17 @@ type.defineMethods
   # Calls your callback when the given Responder's gesture has ended.
   _onResponderEnd: (responder, callback) ->
     @_endListener.stop() if @_endListener
-    @_endListener = responder.didEnd 1, (gesture) =>
+    @_endListener = responder.didRelease.once (gesture) =>
       @_endListener = null
       callback gesture
+    return
 
   # Calls your callback when the tracked Responder's gesture has ended.
   _onGrantedResponderEnd: (callback) ->
     @_onResponderGrant (responder) =>
-      return if responder is this
-      @_onResponderEnd responder, callback
+      if responder isnt this
+        @_onResponderEnd responder, callback
+      return
 
 type.defineBoundMethods
 
@@ -145,9 +150,9 @@ type.defineBoundMethods
     if this is Responder.current
       @_isHolding = yes
       @didHoldStart.emit @_gesture
-
     else
       @didHoldReject.emit @_gesture
+    return
 
 type.overrideMethods
 
@@ -173,17 +178,17 @@ type.overrideMethods
     return no
 
   __onTouchMove: ->
-
-    distance = Math.sqrt (Math.pow @_gesture.dx, 2) + (Math.pow @_gesture.dy, 2)
-    if (not @_isHolding) and (distance >= @_preventDistance)
-      @terminate()
-      return
-
-    @__super arguments
+    if @_isHolding or not @_isPrevented
+      return @__super arguments
+    return @terminate()
 
   __onTouchEnd: (event) ->
     {touches} = event.nativeEvent
     @_onHoldEnd() if touches.length is 0
-    @__super arguments
+    return @__super arguments
+
+  __onTerminationRequest: ->
+    return no if @_isHolding
+    return @__super arguments
 
 module.exports = type.build()
